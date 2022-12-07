@@ -45,7 +45,7 @@ fn sort_elf_lists(mut elf_lists: ElfLists) -> SortedElfLists {
     SortedElfLists(elf_lists.0)
 }
 
-fn get_max_calories_for_rank(calorie_lists: &SortedElfLists, rank: usize) -> usize {
+fn get_day_calories_for_elf(calorie_lists: &SortedElfLists, rank: usize) -> usize {
     calorie_lists
         .0
         .get(rank)
@@ -54,9 +54,9 @@ fn get_max_calories_for_rank(calorie_lists: &SortedElfLists, rank: usize) -> usi
 }
 
 fn get_top_3(calorie_lists: &SortedElfLists) -> usize {
-    get_max_calories_for_rank(calorie_lists, 0)
-        + get_max_calories_for_rank(calorie_lists, 1)
-        + get_max_calories_for_rank(calorie_lists, 2)
+    get_day_calories_for_elf(calorie_lists, 0)
+        + get_day_calories_for_elf(calorie_lists, 1)
+        + get_day_calories_for_elf(calorie_lists, 2)
 }
 
 fn parse_input(input: &str) -> ElfLists {
@@ -81,8 +81,8 @@ fn parse_input(input: &str) -> ElfLists {
 }
 
 #[cfg(test)]
-mod test {
-    use crate::day1::{get_max_calories_for_rank, get_top_3, parse_input, sort_elf_lists};
+mod day1_test {
+    use crate::day1::{get_day_calories_for_elf, get_top_3, parse_input, sort_elf_lists};
 
     #[test]
     fn challenge_1() {
@@ -90,7 +90,7 @@ mod test {
         let elf_lists = parse_input(input);
 
         let sorted_elf_lists = sort_elf_lists(elf_lists);
-        let sum_calories = get_max_calories_for_rank(&sorted_elf_lists, 0);
+        let sum_calories = get_day_calories_for_elf(&sorted_elf_lists, 0);
 
         assert_eq!(sum_calories, 70720);
     }
