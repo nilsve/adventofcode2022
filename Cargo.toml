@@ -7,4 +7,4 @@ edition = "2021"
 benchmark-simple = "0.1.7"
 
 [profile.test]
-opt-level = 3
+#opt-level = 3
