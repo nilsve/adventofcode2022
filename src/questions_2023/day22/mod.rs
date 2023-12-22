@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[derive(Debug, Clone, Copy)]
 struct Coord {
     x: usize,
@@ -54,7 +56,7 @@ impl Coord {
 struct Brick {
     from: Coord,
     to: Coord,
-    // brick_number: char,
+    brick_number: usize,
 }
 
 impl Brick {
@@ -67,7 +69,7 @@ impl Brick {
         Brick {
             from: Coord::new(from),
             to: Coord::new(to),
-            // brick_number: ('A' as u8 + line_number as u8) as char,
+            brick_number: line_number,
         }
     }
 }
@@ -132,10 +134,10 @@ impl Simulator {
         Self { bricks }
     }
 
-    // Returns true if changes were made
-    fn simulate_falling_step(bricks: Vec<Brick>) -> (Vec<Brick>, bool) {
+    // All updated bricks, and the bricks that fell
+    fn simulate_falling_step(bricks: Vec<Brick>) -> (Vec<Brick>, Vec<Brick>) {
         let map = Map::create_map_from_bricks(&bricks);
-        let mut changes_made = false;
+        let mut fallen_bricks = Vec::new();
 
         let updated_bricks = bricks
             .clone()
@@ -158,7 +160,7 @@ impl Simulator {
 
                 if can_fall {
                     // println!("Can fall: {:?}", brick);
-                    changes_made = true;
+                    fallen_bricks.push(brick);
                     fallen_brick
                 } else {
                     // println!("Cannot fall: {:?}", brick);
@@ -167,14 +169,14 @@ impl Simulator {
             })
             .collect();
 
-        (updated_bricks, changes_made)
+        (updated_bricks, fallen_bricks)
     }
 
     fn simulate_falling(&mut self) {
         loop {
-            let (updated_bricks, changes_made) = Self::simulate_falling_step(self.bricks.clone());
+            let (updated_bricks, fallen_bricks) = Self::simulate_falling_step(self.bricks.clone());
 
-            if !changes_made {
+            if fallen_bricks.len() == 0 {
                 break;
             }
 
@@ -182,11 +184,58 @@ impl Simulator {
         }
     }
 
-    fn get_removable_brick_count(&self) -> usize {
-        self.bricks
+    fn get_total_fall_count(&self) -> usize {
+        let removable_brick_count = self
+            .bricks
             .iter()
             .enumerate()
-            .filter(|(index, brick)| {
+            .map(|(index, brick)| {
+                let mut bricks_without_this_brick: Vec<Brick> = self
+                    .bricks
+                    .clone()
+                    .into_iter()
+                    .enumerate()
+                    .filter(|(other_index, _)| index != *other_index)
+                    .map(|(_, brick)| brick)
+                    .collect();
+
+                let mut unique_fallen_bricks: HashSet<usize> = HashSet::new();
+
+                loop {
+                    // println!("====\nSimulation step for brick {:?}\n====", brick);
+
+                    let (updated_bricks, fallen_bricks) =
+                        Self::simulate_falling_step(bricks_without_this_brick);
+
+                    if fallen_bricks.len() == 0 {
+                        break;
+                    }
+
+                    bricks_without_this_brick = updated_bricks;
+                    fallen_bricks.iter().for_each(|brick| {
+                        unique_fallen_bricks.insert(brick.brick_number);
+                    });
+
+                    // println!(
+                    //     "Total fallen so far: {} {:?}",
+                    //     unique_fallen_bricks.len(),
+                    //     brick
+                    // );
+                    // println!("====\nEnd\n====");
+                }
+
+                unique_fallen_bricks.len()
+            })
+            .sum();
+
+        removable_brick_count
+    }
+    fn get_removable_brick_count(&self) -> usize {
+        let removable_brick_count = self
+            .bricks
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| {
                 let bricks_without_this_brick: Vec<Brick> = self
                     .bricks
                     .clone()
@@ -196,11 +245,13 @@ impl Simulator {
                     .map(|(_, brick)| brick)
                     .collect();
 
-                let is_removable = !Self::simulate_falling_step(bricks_without_this_brick).1;
+                let fallen_bricks = Self::simulate_falling_step(bricks_without_this_brick).1;
 
-                is_removable
+                fallen_bricks.len() == 0
             })
-            .count()
+            .count();
+
+        removable_brick_count
     }
 }
 
@@ -211,7 +262,10 @@ fn calculate(input: &str) -> (usize, usize) {
 
     simulator.simulate_falling();
 
-    (simulator.get_removable_brick_count(), 0)
+    (
+        simulator.get_removable_brick_count(),
+        simulator.get_total_fall_count(),
+    )
 }
 
 #[cfg(test)]
@@ -223,7 +277,7 @@ mod day1_tests {
         let input = include_str!("test_input.txt");
         let result = calculate(input);
 
-        assert_eq!(result, (5, 0));
+        assert_eq!(result, (5, 7));
     }
 
     #[test]
