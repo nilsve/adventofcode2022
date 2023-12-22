@@ -1,27 +1,21 @@
 fn calculate_points(them: &str, us: &str) -> usize {
     match them {
-        "A" => {
-            match us {
-                "X" => 3,
-                "Y" => 6,
-                _ => 0
-            }
-        }
-        "B" => {
-            match us {
-                "X" => 0,
-                "Y" => 3,
-                _ => 6
-            }
-        }
-        "C" => {
-            match us {
-                "X" => 6,
-                "Y" => 0,
-                _ => 3
-            }
-        }
-        _ => unimplemented!()
+        "A" => match us {
+            "X" => 3,
+            "Y" => 6,
+            _ => 0,
+        },
+        "B" => match us {
+            "X" => 0,
+            "Y" => 3,
+            _ => 6,
+        },
+        "C" => match us {
+            "X" => 6,
+            "Y" => 0,
+            _ => 3,
+        },
+        _ => unimplemented!(),
     }
 }
 
@@ -32,8 +26,8 @@ fn parse_input_challenge_1(str: &str) -> usize {
                 return None;
             }
             let mut splitted = line.split(' ').clone();
-            let them = splitted.next().unwrap().clone();
-            let us = splitted.next().unwrap().clone();
+            let them = splitted.next().unwrap();
+            let us = splitted.next().unwrap();
 
             let match_points = calculate_points(them, us);
 
@@ -54,7 +48,7 @@ fn get_winning_input(them: &str) -> &'static str {
         "A" => "Y",
         "B" => "Z",
         "C" => "X",
-        _ => panic!()
+        _ => panic!(),
     }
 }
 
@@ -63,7 +57,7 @@ fn get_losing_input(them: &str) -> &'static str {
         "A" => "Z",
         "B" => "X",
         "C" => "Y",
-        _ => panic!()
+        _ => panic!(),
     }
 }
 
@@ -72,7 +66,7 @@ fn get_matching_input(them: &str) -> &'static str {
         "A" => "X",
         "B" => "Y",
         "C" => "Z",
-        _ => panic!()
+        _ => panic!(),
     }
 }
 
@@ -81,7 +75,7 @@ fn get_input_points(us: &str) -> usize {
         "X" => 1,
         "Y" => 2,
         "Z" => 3,
-        _ => unimplemented!()
+        _ => unimplemented!(),
     }
 }
 
@@ -99,7 +93,7 @@ fn parse_input_challenge_2(str: &str) -> usize {
                 "X" => (0, get_losing_input(them)),
                 "Y" => (3, get_matching_input(them)),
                 "Z" => (6, get_winning_input(them)),
-                _ => panic!()
+                _ => panic!(),
             };
 
             let input_points = get_input_points(input);
