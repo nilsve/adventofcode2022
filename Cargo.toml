@@ -9,3 +9,7 @@ benchmark-simple = "0.1.7"
 [dependencies]
 lazy_static = "1.4.0"
 phf = "0.11.2"
+
+[profile.test]
+#opt-level = 3
+
