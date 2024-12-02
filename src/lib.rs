@@ -12,3 +12,4 @@ mod day8;
 mod day9;
 
 mod questions_2023;
+mod questions_2024;
