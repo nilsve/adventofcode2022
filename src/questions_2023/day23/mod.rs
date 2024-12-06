@@ -25,6 +25,11 @@ impl Coord {
     }
 }
 
+enum PathFindResult {
+    StillSearching,
+    FoundExit(usize),
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 enum Direction {
     Up,
@@ -124,7 +129,12 @@ impl Map {
             .expect("Tile not found at X coord")
     }
 
-    fn get_walkable_adjacent_coords(&self, coord: &Coord, exclude: &HashSet<Coord>) -> Vec<Coord> {
+    fn get_walkable_adjacent_coords(
+        &self,
+        coord: &Coord,
+        exclude: &HashSet<Coord>,
+        can_climb_slopes: bool,
+    ) -> Vec<Coord> {
         let coords = [
             Coord {
                 x: coord.x - 1,
@@ -160,6 +170,11 @@ impl Map {
                     TileType::Path => true,
                     TileType::Forest => false,
                     TileType::Slope(direction) => {
+                        if can_climb_slopes {
+                            return direction == coord.get_relative_direction(&possible_coord)
+                                || direction == possible_coord.get_relative_direction(&coord);
+                        }
+
                         direction == coord.get_relative_direction(&possible_coord)
                     }
                 }
@@ -171,22 +186,54 @@ impl Map {
 
     fn find_longest_path(
         &self,
-        start: &Coord,
+        mut start: Coord,
         end: &Coord,
         mut traversed: HashSet<Coord>,
-        start_length: usize,
-    ) -> usize {
-        traversed.insert(start.clone());
+        mut start_length: usize,
+        can_climb_slopes: bool,
+    ) -> PathFindResult {
+        loop {
+            traversed.insert(start.clone());
 
-        let possible_coords = self.get_walkable_adjacent_coords(start, &traversed);
+            if start == *end {
+                return PathFindResult::FoundExit(start_length);
+            }
 
-        let longest_path = possible_coords
-            .iter()
-            .map(|coord| self.find_longest_path(coord, &end, traversed.clone(), start_length + 1))
-            .max()
-            .unwrap_or(start_length);
+            let possible_coords =
+                self.get_walkable_adjacent_coords(&start, &traversed, can_climb_slopes);
 
-        longest_path
+            if possible_coords.len() == 1 {
+                start = *possible_coords.get(0).unwrap();
+                start_length += 1;
+            } else {
+                return if let Some(longest_path) = possible_coords
+                    .iter()
+                    .map(|coord| {
+                        self.find_longest_path(
+                            coord.clone(),
+                            &end,
+                            traversed.clone(),
+                            start_length + 1,
+                            can_climb_slopes,
+                        )
+                    })
+                    .filter(|result| match result {
+                        PathFindResult::StillSearching => false,
+                        PathFindResult::FoundExit(_) => true,
+                    })
+                    .map(|result| match result {
+                        PathFindResult::StillSearching => panic!("Shouldn't happen"),
+                        PathFindResult::FoundExit(length) => length,
+                    })
+                    .max()
+                {
+                    println!("Found exit with {} steps", longest_path);
+                    PathFindResult::FoundExit(longest_path)
+                } else {
+                    PathFindResult::StillSearching
+                };
+            }
+        }
     }
 }
 
@@ -195,14 +242,29 @@ fn calculate(input: &str) -> (usize, usize) {
 
     let exits = map.find_exits();
 
-    let longest_path_size = map.find_longest_path(
-        exits.get(0).unwrap(),
+    let longest_path_size = match map.find_longest_path(
+        exits.get(0).unwrap().clone(),
         exits.get(1).unwrap(),
         HashSet::new(),
         0,
-    );
+        false,
+    ) {
+        PathFindResult::StillSearching => panic!("Exit not found!"),
+        PathFindResult::FoundExit(length) => length,
+    };
 
-    (longest_path_size, 0)
+    let longest_path_size_without_slopes = match map.find_longest_path(
+        exits.get(0).unwrap().clone(),
+        exits.get(1).unwrap(),
+        HashSet::new(),
+        0,
+        true,
+    ) {
+        PathFindResult::StillSearching => panic!("Exit not found"),
+        PathFindResult::FoundExit(length) => length,
+    };
+
+    (longest_path_size, longest_path_size_without_slopes)
 }
 
 #[cfg(test)]
@@ -215,7 +277,7 @@ mod day1_tests {
         let input = include_str!("test_input.txt");
         let result = calculate(input);
 
-        assert_eq!(result, (94, 0));
+        assert_eq!(result, (94, 154));
     }
 
     #[test]
@@ -243,36 +305,36 @@ mod day1_tests {
         let mut traversed = HashSet::new();
 
         assert_eq!(
-            map.get_walkable_adjacent_coords(&Coord { x: 1, y: 0 }, &traversed)
+            map.get_walkable_adjacent_coords(&Coord { x: 1, y: 0 }, &traversed, false)
                 .len(),
             1
         );
         assert_eq!(
-            map.get_walkable_adjacent_coords(&Coord { x: 2, y: 1 }, &traversed)
+            map.get_walkable_adjacent_coords(&Coord { x: 2, y: 1 }, &traversed, false)
                 .len(),
             2
         );
 
         assert_eq!(
-            map.get_walkable_adjacent_coords(&Coord { x: 2, y: 1 }, &traversed)
+            map.get_walkable_adjacent_coords(&Coord { x: 2, y: 1 }, &traversed, false)
                 .len(),
             2
         );
 
         assert_eq!(
-            map.get_walkable_adjacent_coords(&Coord { x: 11, y: 3 }, &traversed)
+            map.get_walkable_adjacent_coords(&Coord { x: 11, y: 3 }, &traversed, false)
                 .len(),
             2
         );
         assert_eq!(
-            map.get_walkable_adjacent_coords(&Coord { x: 13, y: 3 }, &traversed)
+            map.get_walkable_adjacent_coords(&Coord { x: 13, y: 3 }, &traversed, false)
                 .len(),
             1
         );
 
-        let vec = map.get_walkable_adjacent_coords(&Coord { x: 11, y: 3 }, &traversed);
+        let vec = map.get_walkable_adjacent_coords(&Coord { x: 11, y: 3 }, &traversed, false);
         traversed.insert(vec.get(0).unwrap().clone());
-        let vec2 = map.get_walkable_adjacent_coords(&Coord { x: 11, y: 3 }, &traversed);
+        let vec2 = map.get_walkable_adjacent_coords(&Coord { x: 11, y: 3 }, &traversed, false);
 
         assert_eq!(vec.len() - 1, vec2.len());
     }
