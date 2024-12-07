@@ -38,7 +38,17 @@ pub struct Grid {
 
 impl Debug for Grid {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let text = self.data.iter().map(|line| line.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(" ")).collect::<Vec<_>>().join("\n");
+        let text = self
+            .data
+            .iter()
+            .map(|line| {
+                line.iter()
+                    .map(|c| c.to_string())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
         f.write_str(&text)
     }
 }
@@ -47,10 +57,18 @@ impl Grid {
     fn new_from_grid_coord(grid: &Grid, x: usize, y: usize) -> Self {
         Grid {
             data: vec![
-                vec![grid.data[y - 1][x - 1], grid.data[y - 1][x], grid.data[y - 1][x + 1]],
+                vec![
+                    grid.data[y - 1][x - 1],
+                    grid.data[y - 1][x],
+                    grid.data[y - 1][x + 1],
+                ],
                 vec![grid.data[y][x - 1], grid.data[y][x], grid.data[y][x + 1]],
-                vec![grid.data[y + 1][x - 1], grid.data[y + 1][x], grid.data[y + 1][x + 1]],
-            ]
+                vec![
+                    grid.data[y + 1][x - 1],
+                    grid.data[y + 1][x],
+                    grid.data[y + 1][x + 1],
+                ],
+            ],
         }
     }
 
@@ -126,9 +144,7 @@ impl Iterator for GridIterator<VerticalIterator> {
         };
 
         match horizontal_line.get(self.data.x) {
-            None => {
-                None
-            }
+            None => None,
             Some(chr) => {
                 self.data.y += 1;
                 Some(*chr)
@@ -204,7 +220,8 @@ fn calculate(input: &str, calc_mas: bool) -> usize {
     if !calc_mas {
         let horizontal_count = count_occurrences(grid.clone().horizontal_iterator(), XMAS_PATTERN);
         let vertical_count = count_occurrences(grid.clone().vertical_iterator(), XMAS_PATTERN);
-        let diagonal_right_count = count_occurrences(grid.clone().diagonal_right_iterator(), XMAS_PATTERN);
+        let diagonal_right_count =
+            count_occurrences(grid.clone().diagonal_right_iterator(), XMAS_PATTERN);
         let diagonal_left_count = count_occurrences(grid.diagonal_left_iterator(), XMAS_PATTERN);
 
         return horizontal_count + vertical_count + diagonal_left_count + diagonal_right_count;
@@ -216,12 +233,14 @@ fn calculate(input: &str, calc_mas: bool) -> usize {
         for x in 1..grid.data.len() - 1 {
             let sub_grid = Grid::new_from_grid_coord(&grid, x, y);
 
+            let diagonal_right_count =
+                count_occurrences(sub_grid.clone().diagonal_right_iterator(), MAS_PATTERN);
+            let diagonal_left_count =
+                count_occurrences(sub_grid.clone().diagonal_left_iterator(), MAS_PATTERN);
 
-            let diagonal_right_count = count_occurrences(sub_grid.clone().diagonal_right_iterator(), MAS_PATTERN);
-            let diagonal_left_count = count_occurrences(sub_grid.clone().diagonal_left_iterator(), MAS_PATTERN);
+            if diagonal_right_count == 1 && diagonal_left_count == 1 {
+                println!("X {x} Y {y} lc {diagonal_left_count} rc {diagonal_right_count}");
 
-            if diagonal_right_count > 0|| diagonal_left_count > 0 {
-                println!("{:?} {diagonal_right_count} {diagonal_left_count}", sub_grid);
                 total += 1;
             }
         }
@@ -238,7 +257,10 @@ fn count_occurrences(iterator: impl Iterator<Item = char>, pattern: &str) -> usi
 
     let forwards = chars.match_indices(pattern).collect::<Vec<_>>().len();
     let reversed_pattern: String = pattern.chars().rev().collect();
-    let backwards = chars.match_indices(&reversed_pattern).collect::<Vec<_>>().len();
+    let backwards = chars
+        .match_indices(&reversed_pattern)
+        .collect::<Vec<_>>()
+        .len();
 
     forwards + backwards
 }

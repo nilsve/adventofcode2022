@@ -56,7 +56,7 @@ struct Map {
     tiles: Vec<Vec<Tile>>,
 }
 
-const RECURSION_TRESHOLD: usize = 5;
+const RECURSION_TRESHOLD: usize = 10;
 
 impl Map {
     fn new(input: &str) -> Self {
@@ -156,7 +156,7 @@ fn calculate_obstacles(input: &str) -> usize {
         .visited_positions
         .iter()
         .map(|(pos, _)| pos)
-        .filter(|pos| **pos != solved_map.guard_pos)
+        .filter(|pos| **pos != map.guard_pos)
         .map(|pos| {
             let mut test_map = map.clone();
 
@@ -179,7 +179,7 @@ fn calculate_obstacles(input: &str) -> usize {
 }
 
 #[cfg(test)]
-mod day5_tests {
+mod day6_tests {
     use crate::questions_2024::day6::{calculate, calculate_obstacles};
 
     #[test]
