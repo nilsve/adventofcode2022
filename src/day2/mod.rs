@@ -86,8 +86,8 @@ fn parse_input_challenge_2(str: &str) -> usize {
                 return None;
             }
             let mut splitted = line.split(' ').clone();
-            let them = splitted.next().unwrap().clone();
-            let us = splitted.next().unwrap().clone();
+            let them = splitted.next().unwrap();
+            let us = splitted.next().unwrap();
 
             let (match_points, input) = match us {
                 "X" => (0, get_losing_input(them)),

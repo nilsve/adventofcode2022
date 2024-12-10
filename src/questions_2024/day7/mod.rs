@@ -104,7 +104,7 @@ impl Solver {
 }
 
 #[cfg(test)]
-mod day6_tests {
+mod day7_tests {
     use crate::questions_2024::day7::{calculate, Operator};
 
     #[test]
